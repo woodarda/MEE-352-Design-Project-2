@@ -121,8 +121,10 @@ Run150.CountNTU=CountFlowNTU(Run150.Eff,Run150.Cr);
 [Run90.Re_c,Run90.NuD_c,Run90.h_c]=IntFlowCCS(Water,Water.mdot,D-Do);
 [Run150.Re_c,Run150.NuD_c,Run150.h_c]=IntFlowCCS(Water,Water.mdot,D-Do);
 
+% Function to calculate Rconv
 RConvFun=@(h,D) (h*pi*D)^-1;
 
+% Calculate Req for the 90 min scenario
 Run90.Rconvh=RConvFun(Run90.h_h,Di);
 Run90.Rcond=log(Do/Di)/(2*pi*ks);
 Run90.Rconvc=RConvFun(Run90.h_c,Do);
@@ -131,6 +133,7 @@ R=[Run90.Rconvh,Run90.Rcond,Run90.Rconvc];
 
 Run90.Req=sum(R);
 
+% Calculate Req for the 150 min scenario
 Run150.Rconvh=RConvFun(Run150.h_h,Di);
 Run150.Rcond=log(Do/Di)/(2*pi*ks);
 Run150.Rconvc=RConvFun(Run150.h_c,Do);
@@ -139,3 +142,16 @@ R=[Run150.Rconvh,Run150.Rcond,Run150.Rconvc];
 
 Run150.Req=sum(R);
 
+% Func to calculate L
+LFunc=@(Req,NTU,Cmin) Req*(NTU*Cmin);
+
+% Calculate L for run 90 Counter Flow
+Run90.LCount=LFunc(Run90.Req,Run90.CountNTU,Run90.Cmin);
+
+% Calculate L for run 150 Parallel Flow
+Run150.LPar=LFunc(Run150.Req,Run150.ParNTU,Run150.Cmin);
+% Calculate L for run 150 Counter Flow
+Run150.LCount=LFunc(Run150.Req,Run150.CountNTU,Run150.Cmin);
+
+Run90
+Run150
