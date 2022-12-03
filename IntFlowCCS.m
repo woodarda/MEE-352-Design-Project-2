@@ -1,4 +1,4 @@
-function [Re,NuD,hbar] = IntFlowCCS(Fluid,mdot,D)
+function [Re,NuD,hbar,xfdh] = IntFlowCCS(Fluid,mdot,D)
 %INTFLOWCCS Summary of this function goes here
 %   Detailed explanation goes here
  

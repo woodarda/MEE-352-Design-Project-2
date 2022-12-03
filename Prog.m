@@ -13,7 +13,7 @@ mdot1=3200/(90*60); % Chemical flow rate Scenario 1 (kg/s)
 mdot2=3200/(150*60); % Chemical flow rate Scenario 2 (kg/s)
 
 Do=50/1000; % Inner tube's outer diameter
-Di=25/1000; % Inner tube's Inner diameter
+Di=45/1000; % Inner tube's Inner diameter
 D=75/1000;  % Outer Tube's Diameter
 
 % use interpolation to find the properties of the Temperature at Tbar
@@ -113,13 +113,13 @@ Run150.CountNTU=CountFlowNTU(Run150.Eff,Run150.Cr);
 
 % Calculate Reynolds number, Nusselt number and convection coefficient 
 % of the hot fluid
-[Run90.Re_h,Run90.NuD_h,Run90.h_h]=IntFlowCCS(Chem,Chem.mdot1,Di);
-[Run150.Re_h,Run150.NuD_h,Run150.h_h]=IntFlowCCS(Chem,Chem.mdot2,Di);
+[Run90.Re_h,Run90.NuD_h,Run90.h_h,Run90.xfdh_h]=IntFlowCCS(Chem,Chem.mdot1,Di);
+[Run150.Re_h,Run150.NuD_h,Run150.h_h,Run150.xfdh_h]=IntFlowCCS(Chem,Chem.mdot2,Di);
 
 % Calculate Reynolds number, Nusselt number and convection coefficient 
 % of the cold fluid
-[Run90.Re_c,Run90.NuD_c,Run90.h_c]=IntFlowCCS(Water,Water.mdot,D-Do);
-[Run150.Re_c,Run150.NuD_c,Run150.h_c]=IntFlowCCS(Water,Water.mdot,D-Do);
+[Run90.Re_c,Run90.NuD_c,Run90.h_c,Run90.xfdh_c]=IntFlowCCS(Water,Water.mdot,D-Do);
+[Run150.Re_c,Run150.NuD_c,Run150.h_c,Run150.xfdh_c]=IntFlowCCS(Water,Water.mdot,D-Do);
 
 % Function to calculate Rconv
 RConvFun=@(h,D) (h*pi*D)^-1;
