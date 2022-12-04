@@ -1,10 +1,17 @@
 close all; clear; clc;
 
-%% Solid Properties %%
-
+%% To optimize Concentric tube alter these
+Do=50/1000; % Inner tube's outer diameter
+Di=45/1000; % Inner tube's Inner diameter
+D=75/1000;  % Outer Tube's Diameter
 ks=1000; % conduction coefficient W/m*K
 
+%% to optimize Cross Flow Alter These
+CcMixed=false;
+Aligned=True;
 
+
+% Dont Change Anything under here
 %% Chem Properties %%
 
 Ti= 80+273; % Inlet Temperature (K)
@@ -12,9 +19,7 @@ To= 40+273; % Outlet Temperature (K)
 mdot1=3200/(90*60); % Chemical flow rate Scenario 1 (kg/s)
 mdot2=3200/(150*60); % Chemical flow rate Scenario 2 (kg/s)
 
-Do=50/1000; % Inner tube's outer diameter
-Di=45/1000; % Inner tube's Inner diameter
-D=75/1000;  % Outer Tube's Diameter
+
 
 % use interpolation to find the properties of the Temperature at Tbar
 [Temp, P,v, hfg, cp, mu, k, Pr]=AW_Interpolation((To+Ti)*0.5);
@@ -26,6 +31,7 @@ Chem=table(Ti,To,mdot1,mdot2,Temp,P,v,hfg,cp,mu,k,Pr);
 Ti=10+273; % water inlet temperature
 mdot=0.5; % Water flow rate (kg/s)
 To=Chem.To; % initial guess for outlet temp of water
+
 % create a structure for the properties of the water
 Water=table(Ti, To, mdot);
 
@@ -97,61 +103,33 @@ CalcEff=@(qh,qmax) qh/qmax;
 Run90.Eff=CalcEff(Run90.qh,Run90.qmax);
 Run150.Eff=CalcEff(Run150.qh,Run150.qmax);
 
-% Calculates NTU if the flow is parallel
-ParFlowNTU=@(Eff,Cr) -log(1-Eff*(1+Cr))/(1+Cr);
+Run90CF=Run90;
+Run150CF=Run150;
+
+Run90CT=Run90;
+Run150CT=Run150;
+%% HEAT EXCHANGER: CONCENTRIC CIRCLES
+
+[Run90CT,Run150CT]=ConcentricCircles(Run90CT,Run150CT,Chem,Water,Di,Do,D,ks);
 
 
-Run90.ParNTU=ParFlowNTU(Run90.Eff,Run90.Cr);
-Run150.ParNTU=ParFlowNTU(Run150.Eff,Run150.Cr);
+%% HEAT EXCHANGER: CROSS FLOW
+Run90CF.CcMixed=CcMixed;
+Run150CF.CcMixed=CcMixed;
 
-% Calculates NTU if the flow is Counter
-CountFlowNTU=@(Eff,Cr) log((Eff-1)/(Eff*Cr-1))/(Cr-1);
+if Aligned==false
+    Run90CF.Aligned=false;
+    Run150CF.Aligned=false;
+end
 
-% Runs CountNTU for both 90 and 150 scenarios
-Run90.CountNTU=CountFlowNTU(Run90.Eff,Run90.Cr);
-Run150.CountNTU=CountFlowNTU(Run150.Eff,Run150.Cr);
+if Aligned==true
+    Run90CF.Aligned=True;
+    Run150CF.Aligned=True;
+end
 
-% Calculate Reynolds number, Nusselt number and convection coefficient 
-% of the hot fluid
-[Run90.Re_h,Run90.NuD_h,Run90.h_h,Run90.xfdh_h]=IntFlowCCS(Chem,Chem.mdot1,Di);
-[Run150.Re_h,Run150.NuD_h,Run150.h_h,Run150.xfdh_h]=IntFlowCCS(Chem,Chem.mdot2,Di);
+[Run90CF,Run150CF]=CrossFlow(Run90CF,Run150CF,Chem,Water,Di,Do,D,ks);
+Run90CF
+Run150CF
 
-% Calculate Reynolds number, Nusselt number and convection coefficient 
-% of the cold fluid
-[Run90.Re_c,Run90.NuD_c,Run90.h_c,Run90.xfdh_c]=IntFlowCCS(Water,Water.mdot,D-Do);
-[Run150.Re_c,Run150.NuD_c,Run150.h_c,Run150.xfdh_c]=IntFlowCCS(Water,Water.mdot,D-Do);
-
-% Function to calculate Rconv
-RConvFun=@(h,D) (h*pi*D)^-1;
-
-% Calculate Req for the 90 min scenario
-Run90.Rconvh=RConvFun(Run90.h_h,Di);
-Run90.Rcond=log(Do/Di)/(2*pi*ks);
-Run90.Rconvc=RConvFun(Run90.h_c,Do);
-
-R=[Run90.Rconvh,Run90.Rcond,Run90.Rconvc];
-
-Run90.Req=sum(R);
-
-% Calculate Req for the 150 min scenario
-Run150.Rconvh=RConvFun(Run150.h_h,Di);
-Run150.Rcond=log(Do/Di)/(2*pi*ks);
-Run150.Rconvc=RConvFun(Run150.h_c,Do);
-
-R=[Run150.Rconvh,Run150.Rcond,Run150.Rconvc];
-
-Run150.Req=sum(R);
-
-% Func to calculate L
-LFunc=@(Req,NTU,Cmin) Req*(NTU*Cmin);
-
-% Calculate L for run 90 Counter Flow
-Run90.LCount=LFunc(Run90.Req,Run90.CountNTU,Run90.Cmin);
-
-% Calculate L for run 150 Parallel Flow
-Run150.LPar=LFunc(Run150.Req,Run150.ParNTU,Run150.Cmin);
-% Calculate L for run 150 Counter Flow
-Run150.LCount=LFunc(Run150.Req,Run150.CountNTU,Run150.Cmin);
-
-Run90
-Run150
+Run90CT
+Run150CT
